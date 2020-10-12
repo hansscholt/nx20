@@ -44,7 +44,7 @@ namespace nx20
     public class SplitData
     {
         //public int iLevel;
-        //public int iCol;
+        public int iCol;
         public int iCurrentSplit;
         public float fHeight;
         public List<DivisionData> divisionData;

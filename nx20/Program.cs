@@ -21,6 +21,9 @@ namespace nx20
         static bool bAllStepBulk = false;
         static string sBank1 = "perfor1";
         static string sBank2 = "perfor2";
+        static string sBank3 = "perfor3";
+        static string sBank4 = "soccer";
+        static string sBank5 = "soccer";
         static int iCommonBeatSplit = 8;
 
 
@@ -28,10 +31,13 @@ namespace nx20
         static bool bFakeNotesFlag;
         static int iLastDivision;
 
+        static int iAuxDiv;
+
 
         string[] sDiff;
         static void Main(string[] args)
         {
+            iAuxDiv = 0;
             Console.WriteLine("--NX20 converter by HANS--");
             bFakeNotesFlag = false;
             IniFile iniFile = new IniFile("config.ini");
@@ -63,6 +69,27 @@ namespace nx20
             }
             else
                 sBank2 = iniFile.Read("SkinBank2", "Config");
+            if (!iniFile.KeyExists("SkinBank3", "Config"))
+            {
+                sBank3 = "perfor3";
+                iniFile.Write("SkinBank3", "perfor3", "Config");
+            }
+            else
+                sBank3 = iniFile.Read("SkinBank3", "Config");
+            if (!iniFile.KeyExists("SkinBank4", "Config"))
+            {
+                sBank4 = "soccer";
+                iniFile.Write("SkinBank4", "soccer", "Config");
+            }
+            else
+                sBank4 = iniFile.Read("SkinBank4", "Config");
+            if (!iniFile.KeyExists("SkinBank5", "Config"))
+            {
+                sBank5 = "fire";
+                iniFile.Write("SkinBank5", "fire", "Config");
+            }
+            else
+                sBank5 = iniFile.Read("SkinBank5", "Config");
             if (!iniFile.KeyExists("CommonBeatSplit", "Config"))
             {
                 iCommonBeatSplit = 8;
@@ -244,7 +271,7 @@ namespace nx20
             sw.WriteLine("#LYRICSPATH:;");
             sw.WriteLine("#CDTITLE:;");
             //sw.WriteLine("#MUSIC:SONG.MP3;");
-            sw.WriteLine("#MUSIC:" + sDirName + ".MP3;");
+            sw.WriteLine("#MUSIC:SONG.MP3;");
             //sw.WriteLine("#PREVIEW:DEMO.MP3;");
             sw.WriteLine("#PREVIEW:D" + sDirName + ".MP3;");
             sw.WriteLine("#OFFSET:0.00000;");
@@ -302,6 +329,8 @@ namespace nx20
                     return '6';
                 case 3: //bonus
                     return '4';
+                case 19: //bonus zigzag
+                    return 'k';
                 default:
                     return '!';
             }
@@ -319,6 +348,10 @@ namespace nx20
                     return 'a';
                 case 3: //ghost
                     return '8';
+                case 17: //ghost zigzag2 appear
+                    return '!';
+                case 18: //ghost zigzag2 vanish
+                    return 't';
                 default:
                     return '!';
             }
@@ -417,6 +450,7 @@ namespace nx20
                 case 18: iItem[5]++; return 'r'; //right
                 case 19: iItem[5]++; return 'w'; //down
                 case 20: iItem[5]++; return 'q'; //left
+                case 21: iItem[5]++; return 'i'; //random item vel 1...8
                 default: return '!';
             }
         }
@@ -435,6 +469,15 @@ namespace nx20
                 case 2: //bank 2
                     bSkin = true;
                     return BankSkin(sBank2);
+                case 3: //bank 3
+                    bSkin = true;
+                    return BankSkin(sBank3);
+                case 4: //bank 4
+                    bSkin = true;
+                    return BankSkin(sBank4);
+                case 5: //bank 5
+                    bSkin = true;
+                    return BankSkin(sBank5);
                 default:
                     return '!';
             }
@@ -446,9 +489,9 @@ namespace nx20
             {
                 case "perfor3": return '3';
                 case "soccer": return '4';
-                case "drumblue": return '6';
-                case "drumred": return '6';
-                case "drumyellow": return '7';
+                case "aadmb": return '5';
+                case "aadmr": return '6';
+                case "aadmy": return '7';
                 case "flower": return '8';
                 case "old": return '9';
                 case "easy": return 'a';
@@ -859,7 +902,7 @@ namespace nx20
             return "";
         }
 
-        string NoteNX20(Step s, int split)
+        string NoteNX20(Step s, int split, char cBrainState)
         {
             if (s.iNote == 0)
                 return "0";
@@ -918,8 +961,23 @@ namespace nx20
                     }
 
                     c[2] = BonusLayer(s.iLayer);
+                    if (s.iLayer == 17)//caso especial
+                    {
+                        Array.Resize(ref c, 5);
+                        c[2] = '4';
+                        c[3] = '1';
+                        c[4] = 'f';
+                    }
+                    if (s.iLayer == 18)//caso especial
+                    {
+                        Array.Resize(ref c, 5);
+                        c[2] = '8';
+                        c[3] = '2';
+                        c[4] = 'f';
+                    }
                     if (c[2] == '!')
                     {
+                        c[0] = 'p';
                         Console.WriteLine("CANT PARSE 65l>>>> Note:" + s.iNote + "\tLayer:" + s.iLayer + "\tPlayer:" + s.iPlayer + "\tSpecial:" + s.iSpecial
                         + "\tSplit:" + (split + 1) + "\tRow:" + (s.iRow + 1) + "\tCol:" + (s.iCol + 1));
                     }
@@ -939,6 +997,10 @@ namespace nx20
                         Console.WriteLine("CANT PARSE 66l>>>> Note:" + s.iNote + "\tLayer:" + s.iLayer + "\tPlayer:" + s.iPlayer + "\tSpecial:" + s.iSpecial
                         + "\tSplit:" + (split + 1) + "\tRow:" + (s.iRow + 1) + "\tCol:" + (s.iCol + 1));
                     }
+
+                    //super excepción, como las letras no tienen skin en los juegos nx2++ las voy a dibujar siempre bonus hidden
+                    c[2] = '7';
+                    bSpecialLayer = true;
                 }
                 else if (s.iNote == 98)//special(letras) //bonus TAP
                 {
@@ -956,6 +1018,10 @@ namespace nx20
                         Console.WriteLine("CANT PARSE 98l>>>> Note:" + s.iNote + "\tLayer:" + s.iLayer + "\tPlayer:" + s.iPlayer + "\tSpecial:" + s.iSpecial
                         + "\tSplit:" + (split + 1) + "\tRow:" + (s.iRow + 1) + "\tCol:" + (s.iCol + 1));
                     }
+
+                    //super excepción, como las letras no tienen skin en los juegos nx2++ las voy a dibujar siempre bonus hidden
+                    c[2] = '7';
+                    bSpecialLayer = true;
                 }
                 else
                 {
@@ -1054,8 +1120,16 @@ namespace nx20
                     }
 
                     c[2] = GhostLayer(s.iLayer);
+                    if (s.iLayer == 17)//caso especial
+                    {
+                        Array.Resize(ref c, 5);
+                        c[2] = '8';
+                        c[3] = '1';
+                        c[4] = 'f';
+                    }
                     if (c[2] == '!') //tap ghost vanish
                     {
+                        //c[0] = 'M';
                         Console.WriteLine("CANT PARSE 35l>>>> Note:" + s.iNote + "\tLayer:" + s.iLayer + "\tPlayer:" + s.iPlayer + "\tSpecial:" + s.iSpecial
                         + "\tSplit:" + (split + 1) + "\tRow:" + (s.iRow + 1) + "\tCol:" + (s.iCol + 1));
                     }
@@ -1108,7 +1182,7 @@ namespace nx20
                     bSpecialLayer = true;
                     c[0] = '1';
 
-                    c[1] = CommonBank(s.iSpecial);
+                    c[1] = CommonBank(s.iPlayer);
                     if (c[1] == '!')
                     {
                         Console.WriteLine("CANT PARSE 99b>>>> Note:" + s.iNote + "\tLayer:" + s.iLayer + "\tPlayer:" + s.iPlayer + "\tSpecial:" + s.iSpecial
@@ -1199,8 +1273,134 @@ namespace nx20
                     }
                     c[2] = '4';
                 }
+
+
+
+
+
+
+                else if (s.iNote == 103)//roll hidden head
+                {
+                    bSpecialLayer = true;
+                    c[0] = '4';
+
+                    c[1] = CommonBank(s.iSpecial);
+                    if (c[1] == '!')
+                    {
+                        Console.WriteLine("CANT PARSE 103b>>>> Note:" + s.iNote + "\tLayer:" + s.iLayer + "\tPlayer:" + s.iPlayer + "\tSpecial:" + s.iSpecial
+                            + "\tSplit:" + (split + 1) + "\tRow:" + (s.iRow + 1) + "\tCol:" + (s.iCol + 1));
+                    }
+                    //layer score
+                    c[2] = BonusLayer(s.iLayer);
+                    if (c[2] == '!')
+                    {
+                        Console.WriteLine("CANT PARSE 103c>>>> Note:" + s.iNote + "\tLayer:" + s.iLayer + "\tPlayer:" + s.iPlayer + "\tSpecial:" + s.iSpecial
+                            + "\tSplit:" + (split + 1) + "\tRow:" + (s.iRow + 1) + "\tCol:" + (s.iCol + 1));
+                    }
+                }
+                else if (s.iNote == 107)//roll hidden body
+                {
+                    c[0] = '0';
+                }
+                else if (s.iNote == 111)//roll hidden tail
+                {
+                    bSpecialLayer = true;
+                    c[0] = '3';
+
+                    c[1] = CommonBank(s.iSpecial);
+                    if (c[1] == '!')
+                    {
+                        Console.WriteLine("CANT PARSE 111b>>>> Note:" + s.iNote + "\tLayer:" + s.iLayer + "\tPlayer:" + s.iPlayer + "\tSpecial:" + s.iSpecial
+                            + "\tSplit:" + (split + 1) + "\tRow:" + (s.iRow + 1) + "\tCol:" + (s.iCol + 1));
+                    }
+                    //layer score
+                    c[2] = BonusLayer(s.iLayer);
+                    if (c[2] == '!')
+                    {
+                        Console.WriteLine("CANT PARSE 111c>>>> Note:" + s.iNote + "\tLayer:" + s.iLayer + "\tPlayer:" + s.iPlayer + "\tSpecial:" + s.iSpecial
+                            + "\tSplit:" + (split + 1) + "\tRow:" + (s.iRow + 1) + "\tCol:" + (s.iCol + 1));
+                    }
+                }
+
+
+                else if (s.iNote == 39)// ghost roll vanish head
+                {
+                    bSpecialLayer = true;
+                    c[0] = '4';
+
+                    c[1] = CommonBank(s.iSpecial);
+                    if (c[1] == '!')
+                    {
+                        Console.WriteLine("CANT PARSE 39b>>>> Note:" + s.iNote + "\tLayer:" + s.iLayer + "\tPlayer:" + s.iPlayer + "\tSpecial:" + s.iSpecial
+                            + "\tSplit:" + (split + 1) + "\tRow:" + (s.iRow + 1) + "\tCol:" + (s.iCol + 1));
+                    }
+                    //layer score
+                    c[2] = GhostLayer(s.iLayer);
+                    if (c[2] == '!')
+                    {
+                        Console.WriteLine("CANT PARSE 39c>>>> Note:" + s.iNote + "\tLayer:" + s.iLayer + "\tPlayer:" + s.iPlayer + "\tSpecial:" + s.iSpecial
+                            + "\tSplit:" + (split + 1) + "\tRow:" + (s.iRow + 1) + "\tCol:" + (s.iCol + 1));
+                    }
+                }
+                else if (s.iNote == 43)// ghost roll vanish body
+                {
+                    c[0] = '0';
+                }
+                else if (s.iNote == 47)// ghost roll vanish tail
+                {
+                    bSpecialLayer = true;
+                    c[0] = '3';
+
+                    c[1] = CommonBank(s.iSpecial);
+                    if (c[1] == '!')
+                    {
+                        Console.WriteLine("CANT PARSE 43b>>>> Note:" + s.iNote + "\tLayer:" + s.iLayer + "\tPlayer:" + s.iPlayer + "\tSpecial:" + s.iSpecial
+                            + "\tSplit:" + (split + 1) + "\tRow:" + (s.iRow + 1) + "\tCol:" + (s.iCol + 1));
+                    }
+                    //layer score
+                    c[2] = GhostLayer(s.iLayer);
+                    if (c[2] == '!')
+                    {
+                        Console.WriteLine("CANT PARSE 43c>>>> Note:" + s.iNote + "\tLayer:" + s.iLayer + "\tPlayer:" + s.iPlayer + "\tSpecial:" + s.iSpecial
+                            + "\tSplit:" + (split + 1) + "\tRow:" + (s.iRow + 1) + "\tCol:" + (s.iCol + 1));
+                    }
+                }
+                else if (s.iNote == 66)// brain answer, it put a lot of options but the program says how many options shows
+                {
+                    bSpecialLayer = true;
+                    c[0] = '3';
+
+                    if (s.iSpecial == 198)
+                    {
+                        c[0] = '-';
+                    }
+                    else if (s.iSpecial == 199)
+                    {
+                        c[0] = '+';
+                    }
+                    else
+                    {
+
+                    }
+                    c[1] = cBrainState;
+                    c[2] = '4';//bonus
+                    //c[1] = CommonBank(s.iSpecial);
+                    //if (c[1] == '!')
+                    //{
+                    //    Console.WriteLine("CANT PARSE 66b>>>> Note:" + s.iNote + "\tLayer:" + s.iLayer + "\tPlayer:" + s.iPlayer + "\tSpecial:" + s.iSpecial
+                    //        + "\tSplit:" + (split + 1) + "\tRow:" + (s.iRow + 1) + "\tCol:" + (s.iCol + 1));
+                    //}
+                    ////layer score
+                    //c[2] = GhostLayer(s.iLayer);
+                    //if (c[2] == '!')
+                    //{
+                    //    c[0] = '3';Console.WriteLine("CANT PARSE 66c>>>> Note:" + s.iNote + "\tLayer:" + s.iLayer + "\tPlayer:" + s.iPlayer + "\tSpecial:" + s.iSpecial
+                    //        + "\tSplit:" + (split + 1) + "\tRow:" + (s.iRow + 1) + "\tCol:" + (s.iCol + 1));
+                    //}
+                }
                 else
                 {
+                    c[0] = 'M';
                     Console.WriteLine("CANT PARSE >>>> Note:" + s.iNote + "\tLayer:" + s.iLayer + "\tPlayer:" + s.iPlayer + "\tSpecial:" + s.iSpecial
                         + "\tSplit:" + (split + 1) + "\tRow:" + (s.iRow + 1) + "\tCol:" + (s.iCol + 1));
                 }
@@ -1214,6 +1414,9 @@ namespace nx20
 
         bool WriteStep(List<SplitData> splitData, int iCols, int iType, string sFile, int iLevel, string sDiff, int iL)
         {
+            if (iLevel == 0)
+                iLevel = 1;
+
             if (splitData.Count == 0)
                 return false;
 
@@ -1221,7 +1424,7 @@ namespace nx20
 
             using (StreamWriter sw = new StreamWriter("STEP.SSC", true))
             {
-                string sDifficulty = "Edit";
+                string sDifficulty = "Beginner";
 
                 if (iCols < 5)
                     return false;
@@ -1315,6 +1518,9 @@ namespace nx20
                 List<int> iROWS = new List<int>();
                 List<float> fWARP = new List<float>();
 
+                List<List<int>> iScore = new List<List<int>>();
+                List<List<int>> iMin = new List<List<int>>();
+
                 string sCol = null;
                 for (int c = 0; c < iCols; c++)
                     sCol += "0";
@@ -1332,7 +1538,7 @@ namespace nx20
                     //para las notas sacar random division data
                     r = new Random(Guid.NewGuid().GetHashCode());
                     int iD = iDivision;
-                    if (iDivision < -1 || iDivision == 999)
+                    if ((iDivision < -1 || iDivision == 999) && iDivision != -999)
                         iDivision = -1;
 
 
@@ -1346,6 +1552,13 @@ namespace nx20
                     {
                         iD = iLastDivision;
                     }
+
+                    if (bAllStepBulk && iDivision == -999)
+                    {
+                        iD = iAuxDiv;
+                    }
+
+
 
                     if (iD < 0)
                         iD = 0;
@@ -1373,6 +1586,22 @@ namespace nx20
                     iBEATSPLIT.Add(divisionData.timming.iBeatSplit);
                     fSPEED.Add(Math.Abs(divisionData.timming.fSpeed));
 
+                    //if (divisionData.divisionInfo.Count > 0)
+                    
+                        List<int> iScoreList = new List<int>();
+                        foreach (DivisionInfo di in divisionData.divisionInfo)
+                            iScoreList.Add(Math.Abs(di.iScore));
+                        iScore.Add(iScoreList);
+
+                        List<int> iMinList = new List<int>();
+                        foreach (DivisionInfo di in divisionData.divisionInfo)
+                            iMinList.Add(Math.Abs(di.iMin));
+                        iMin.Add(iMinList);
+                    
+                    //if (divisionData.divisionInfo.Count > 1)
+                    //{
+                    //    Console.WriteLine("DIVISION INFO COUNT: " + divisionData.divisionInfo.Count);
+                    //}
 
                     //excepción de andamiro, el delay/freeze lo toma solamente del primer bloque, los demas no tienen este offset(RARO)
                     float fDelayStop = splitData[sd].divisionData[0].timming.fOffset;
@@ -1430,6 +1659,37 @@ namespace nx20
                     int iCol = 0;
                     bFakeNotesDivision = true;
                     int iNoteCount = 0;
+
+
+
+
+
+
+
+
+
+                    char cBrainState = '0';
+                    
+                    for (int s = 0; s < iScoreList.Count; s++)
+                    {
+                        if (iScoreList[s] == 26)
+                        {
+                            if (iMinList[s] == 2)
+                                //sw.WriteLine(fCurrentBeat + "=BRAIN02,");
+                                cBrainState = '2';
+                            else if (iMinList[s] == 3)
+                                //sw.WriteLine(fCurrentBeat + "=BRAIN03,");
+                                cBrainState = '3';                            
+                        }
+                    }
+
+
+
+
+
+
+
+
                     for (int s = 0; s < divisionData.step.Count; s++)
                     {
                         Step step = divisionData.step[s];
@@ -1444,11 +1704,12 @@ namespace nx20
                             {
                                 bFakeNotesDivision = false;
                             }
-                            string sNote = NoteNX20(step, sd);
+                            string sNote = NoteNX20(step, sd, cBrainState);
                             if (sNote != "0")
                             {
                                 iNoteCount++;
                             }
+
                             sNOTES.Append(sNote);
                         }
                         else if(iType == 2)
@@ -1498,12 +1759,14 @@ namespace nx20
                     //}
 
                 }
+                iAuxDiv++;
+
                 int iLeft = (iCommonBeatSplit * 4) - iRow;
                 for (int l = 0; l < iLeft; l++)
                     sNOTES.AppendLine(sCol);
 
                 if (bSkin)
-                    sw.WriteLine("#PRELOADNOTESKIN:" + sBank1 + "," + sBank2 + ";");
+                    sw.WriteLine("#PRELOADNOTESKIN:" + sBank1 + "," + sBank2 + "," + sBank3 + "," + sBank4 + ";");
                 else
                     sw.WriteLine("#PRELOADNOTESKIN:;");
 
@@ -1589,7 +1852,77 @@ namespace nx20
                 sw.WriteLine("#TICKCOUNTS:0=" + iCommonBeatSplit + ";");
                 sw.WriteLine("#COMBOS:0.000000=1;");
                 sw.WriteLine("#FAKES:;");
-                sw.WriteLine("#LABELS:;");
+
+                //sw.WriteLine("#LABELS:;");
+                sw.WriteLine("#LABELS:");
+                if (iCols == 5)
+                    sw.WriteLine("0=OFFSET00,");
+                else
+                    sw.WriteLine("0=OFFSET01,");
+
+                for (int o = 0; o < fOFFSET.Count; o++)
+                {
+                    for (int s = 0; s < iScore[o].Count; s++)
+                    {
+                        if (iScore[o][s] == 200)
+                        {
+                            //Console.WriteLine("200 DATA");
+                            if (iMin[o][s] == 2)
+                                sw.WriteLine(fBEAT[o] + "=OFFSET01,");
+                            else if (iMin[o][s] == 3)
+                                sw.WriteLine(fBEAT[o] + "=OFFSET00,");
+                            else if (iMin[o][s] == 1)
+                                sw.WriteLine(fBEAT[o] + "=OFFSET02,");
+                            else
+                            {
+                                sw.WriteLine(fBEAT[o] + "=OFFSET???,");
+                                Console.WriteLine("UKNOWN 200 SCORE: " + iMin[o][s]);
+                            }
+                        }
+                        else if (iScore[o][s] == 26)
+                        {
+                            if (iMin[o][s] == 2)
+                                sw.WriteLine(fBEAT[o] + "=BRAIN02,");
+                            else if (iMin[o][s] == 3)
+                                sw.WriteLine(fBEAT[o] + "=BRAIN03,");
+                            else
+                            {
+                                Console.WriteLine("UKNOWN 26 SCORE: " + iMin[o][s]);
+                            }
+                        }
+                        else if (iScore[o][s] == 999)
+                        {
+                            if (iMin[o][s] == 1)
+                                sw.WriteLine(fBEAT[o] + "=AUTOPLAYON,");
+                            else if (iMin[o][s] == 0)
+                                sw.WriteLine(fBEAT[o] + "=AUTOPLAYOFF,");
+                            else
+                            {
+                                Console.WriteLine("UKNOWN 999 SCORE: " + iMin[o][s]);
+                            }
+                        }
+                        else if (iScore[o][s] > 10)
+                        {
+                            Console.WriteLine("UKNOWN SCORE: " + iScore[o][s]);
+                        }
+                    }
+                    
+                    //
+                }
+                //int sscore = iScore[o];
+                //if (fLastSPEED != fSPEED[o])
+                //{
+                //    if (iSMOOTH[o] == 0)
+                //        sw.WriteLine(fBEAT[o] + "=" + fSPEED[o] + "=1=1,");
+                //    else
+                //    {
+                //        float fLenght = (float)(iROWS[o]) / (float)iCommonBeatSplit;
+                //        sw.WriteLine(fBEAT[o] + "=" + fSPEED[o] + "=" + fLenght + "=0,");
+                //    }
+                //}
+                //fLastSPEED = fSPEED[o];
+                
+                sw.WriteLine(";");
 
                 sw.WriteLine("#NOTES:");
 

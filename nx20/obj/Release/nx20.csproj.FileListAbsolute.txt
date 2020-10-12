@@ -1,0 +1,7 @@
+C:\Users\hancs\Documents\Visual Studio 2017\Projects\NX20\nx20\bin\Release\nx20.exe.config
+C:\Users\hancs\Documents\Visual Studio 2017\Projects\NX20\nx20\bin\Release\nx20.exe
+C:\Users\hancs\Documents\Visual Studio 2017\Projects\NX20\nx20\bin\Release\nx20.pdb
+C:\Users\hancs\Documents\Visual Studio 2017\Projects\NX20\nx20\obj\Release\nx20.csprojAssemblyReference.cache
+C:\Users\hancs\Documents\Visual Studio 2017\Projects\NX20\nx20\obj\Release\nx20.csproj.CoreCompileInputs.cache
+C:\Users\hancs\Documents\Visual Studio 2017\Projects\NX20\nx20\obj\Release\nx20.exe
+C:\Users\hancs\Documents\Visual Studio 2017\Projects\NX20\nx20\obj\Release\nx20.pdb
